@@ -26,9 +26,9 @@ if ! sudo -u "$REAL_USER" sh -c 'command -v uv' &>/dev/null; then
 fi
 UV_BIN="$REAL_HOME/.local/bin/uv"
 
-# Install nanomanager for the real user
+# Install (or reinstall) nanomanager for the real user
 echo "Installing nanomanager..."
-sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" nanobot-manager
+sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" --force nanobot-manager
 
 # Symlink into /usr/local/bin so it's available under sudo
 NANOMANAGER_BIN="$REAL_HOME/.local/bin/nanomanager"

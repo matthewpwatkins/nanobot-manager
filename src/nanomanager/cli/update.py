@@ -4,7 +4,7 @@ import typer
 from rich.console import Console
 
 from nanomanager.core.service import restart_service, stop_service
-from nanomanager.core.uv import get_nanobot_version, lock_install_dirs, unlock_install_dirs, upgrade_nanobot
+from nanomanager.core.uv import get_nanobot_version, get_uv_path, lock_install_dirs, unlock_install_dirs, upgrade_nanobot
 from nanomanager.state import load_state
 from nanomanager.sudo import require_root
 
@@ -35,9 +35,10 @@ def update(
     try:
         if version:
             import subprocess, os
+            uv = get_uv_path()
             console.print(f"[cyan]Installing nanobot-ai=={version}...[/cyan]")
             subprocess.run(
-                ["sudo", "-u", nanobot_user, "uv", "tool", "install", f"nanobot-ai=={version}", "--force"],
+                ["sudo", "-u", nanobot_user, uv, "tool", "install", f"nanobot-ai=={version}", "--force"],
                 check=True,
                 env={**os.environ, "HOME": f"/home/{nanobot_user}"},
             )
