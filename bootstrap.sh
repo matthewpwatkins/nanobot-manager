@@ -35,12 +35,13 @@ if [ -d "$UV_TOOLS_DIR" ]; then
     chown -R "$REAL_USER":"$REAL_GROUP" "$UV_TOOLS_DIR"
 fi
 
-# Fully uninstall before reinstalling to avoid stale RECORD / partial upgrades
+# Fully uninstall and clear cache to avoid stale builds
 sudo -u "$REAL_USER" "$UV_BIN" tool uninstall nanobot-manager 2>/dev/null || true
+sudo -u "$REAL_USER" "$UV_BIN" cache clean nanobot-manager 2>/dev/null || true
 
 # --- Step 3: Install nanomanager ---
 echo "Installing nanomanager..."
-sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" nanobot-manager
+sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" --reinstall nanobot-manager
 
 # --- Step 4: Symlink into /usr/local/bin so 'sudo nanomanager' works ---
 NANOMANAGER_BIN="$REAL_HOME/.local/bin/nanomanager"
