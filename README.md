@@ -30,9 +30,15 @@ The following are auto-installed by `nanomanager install` if missing:
 ## Install
 
 ```bash
-pip install -e .
-# or
-uv pip install -e .
+git clone https://github.com/matthewpwatkins/nanobot-manager.git
+cd nanobot-manager
+./bootstrap.sh    # installs uv (if missing) + nanomanager
+```
+
+Or if you already have `uv`:
+
+```bash
+uv pip install --system -e .
 ```
 
 ## Usage
