@@ -11,29 +11,36 @@ console = Console(stderr=True)
 
 
 def find_uv() -> str | None:
-    """Find the uv binary, checking common locations beyond just PATH."""
+    """Find the uv binary. Only root/managing user ever runs uv."""
+    import pwd
+
+    candidates: list[Path] = []
+
+    # Check SUDO_USER's home (bootstrap installs uv here)
+    sudo_user = os.environ.get("SUDO_USER")
+    if sudo_user:
+        try:
+            user_home = Path(pwd.getpwnam(sudo_user).pw_dir)
+            candidates.append(user_home / ".local" / "bin" / "uv")
+        except KeyError:
+            pass
+
+    # Current user's home
+    candidates.append(Path.home() / ".local" / "bin" / "uv")
+
+    # System-wide locations
+    candidates.append(Path("/usr/local/bin/uv"))
+    candidates.append(Path("/usr/bin/uv"))
+
+    for candidate in candidates:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+
+    # Fall back to PATH search
     found = shutil.which("uv")
     if found:
         return found
-    # Check common install locations (uv installer puts it in ~/.local/bin)
-    for candidate in [
-        Path.home() / ".local" / "bin" / "uv",
-        Path("/usr/local/bin/uv"),
-        Path("/root/.local/bin/uv"),
-    ]:
-        if candidate.is_file():
-            return str(candidate)
-    # Check the SUDO_USER's home too
-    sudo_user = os.environ.get("SUDO_USER")
-    if sudo_user:
-        import pwd
-        try:
-            user_home = Path(pwd.getpwnam(sudo_user).pw_dir)
-            candidate = user_home / ".local" / "bin" / "uv"
-            if candidate.is_file():
-                return str(candidate)
-        except KeyError:
-            pass
+
     return None
 
 
@@ -71,13 +78,18 @@ def get_nanobot_bin_path(nanobot_user: str = "nanobot") -> Path:
     return Path(f"/home/{nanobot_user}/.local/bin/nanobot")
 
 
+def _uv_env(nanobot_user: str) -> dict[str, str]:
+    """Env dict that makes uv install into the nanobot user's home."""
+    return {**os.environ, "HOME": f"/home/{nanobot_user}"}
+
+
 def install_nanobot(nanobot_user: str = "nanobot") -> None:
     uv = get_uv_path()
     console.print(f"[cyan]Installing nanobot-ai for user '{nanobot_user}'...[/cyan]")
     subprocess.run(
-        ["sudo", "-u", nanobot_user, uv, "tool", "install", "nanobot-ai"],
+        [uv, "tool", "install", "nanobot-ai"],
         check=True,
-        env={**os.environ, "HOME": f"/home/{nanobot_user}"},
+        env=_uv_env(nanobot_user),
     )
     console.print("[green]nanobot-ai installed.[/green]")
 
@@ -86,9 +98,9 @@ def upgrade_nanobot(nanobot_user: str = "nanobot") -> None:
     uv = get_uv_path()
     console.print(f"[cyan]Upgrading nanobot-ai...[/cyan]")
     subprocess.run(
-        ["sudo", "-u", nanobot_user, uv, "tool", "upgrade", "nanobot-ai"],
+        [uv, "tool", "upgrade", "nanobot-ai"],
         check=True,
-        env={**os.environ, "HOME": f"/home/{nanobot_user}"},
+        env=_uv_env(nanobot_user),
     )
     console.print("[green]nanobot-ai upgraded.[/green]")
 
@@ -96,10 +108,10 @@ def upgrade_nanobot(nanobot_user: str = "nanobot") -> None:
 def get_nanobot_version(nanobot_user: str = "nanobot") -> str | None:
     uv = get_uv_path()
     result = subprocess.run(
-        ["sudo", "-u", nanobot_user, uv, "tool", "list"],
+        [uv, "tool", "list"],
         capture_output=True,
         text=True,
-        env={**os.environ, "HOME": f"/home/{nanobot_user}"},
+        env=_uv_env(nanobot_user),
     )
     for line in result.stdout.splitlines():
         if "nanobot-ai" in line:

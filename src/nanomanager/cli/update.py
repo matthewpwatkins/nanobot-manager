@@ -38,7 +38,7 @@ def update(
             uv = get_uv_path()
             console.print(f"[cyan]Installing nanobot-ai=={version}...[/cyan]")
             subprocess.run(
-                ["sudo", "-u", nanobot_user, uv, "tool", "install", f"nanobot-ai=={version}", "--force"],
+                [uv, "tool", "install", f"nanobot-ai=={version}", "--force"],
                 check=True,
                 env={**os.environ, "HOME": f"/home/{nanobot_user}"},
             )

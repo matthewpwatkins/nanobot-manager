@@ -43,7 +43,7 @@ sudo -u "$REAL_USER" "$UV_BIN" cache clean nanobot-manager 2>/dev/null || true
 echo "Installing nanomanager..."
 sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" --reinstall nanobot-manager
 
-# --- Step 4: Symlink into /usr/local/bin so 'sudo nanomanager' works ---
+# --- Step 4: Symlink nanomanager into /usr/local/bin so 'sudo nanomanager' works ---
 NANOMANAGER_BIN="$REAL_HOME/.local/bin/nanomanager"
 ln -sf "$NANOMANAGER_BIN" /usr/local/bin/nanomanager
 echo "Linked /usr/local/bin/nanomanager -> $NANOMANAGER_BIN"
