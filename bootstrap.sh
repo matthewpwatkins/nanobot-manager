@@ -40,5 +40,18 @@ if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
+# Symlink into /usr/local/bin so 'sudo nanomanager' works
+# (sudo resets PATH via secure_path and won't find ~/.local/bin)
+NANOMANAGER_BIN="$HOME/.local/bin/nanomanager"
+if [ -f "$NANOMANAGER_BIN" ] && [ ! -e /usr/local/bin/nanomanager ]; then
+    echo "sudo requires nanomanager in /usr/local/bin."
+    read -rp "Create symlink? (requires sudo) [Y/n] " answer
+    answer="${answer:-Y}"
+    if [[ "$answer" =~ ^[Yy] ]]; then
+        sudo ln -sf "$NANOMANAGER_BIN" /usr/local/bin/nanomanager
+        echo "Symlinked /usr/local/bin/nanomanager -> $NANOMANAGER_BIN"
+    fi
+fi
+
 echo ""
 echo "Done. Run 'sudo nanomanager install' to set up the sandbox."
