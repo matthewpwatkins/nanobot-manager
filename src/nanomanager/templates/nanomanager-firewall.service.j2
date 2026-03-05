@@ -1,0 +1,13 @@
+[Unit]
+Description=Nanomanager Firewall Rules
+After=network.target
+Before=nanobot.service
+
+[Service]
+Type=oneshot
+ExecStart=/etc/nanomanager/apply-firewall.sh
+ExecStop=/etc/nanomanager/apply-firewall.sh flush
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

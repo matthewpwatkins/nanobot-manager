@@ -1,0 +1,41 @@
+[Unit]
+Description=Nanobot AI Assistant
+After=network.target{% if proxy_enabled %} squid.service{% endif %}{% if firewall_enabled %} nanomanager-firewall.service{% endif %}
+
+{% if firewall_enabled %}Requires=nanomanager-firewall.service
+{% endif %}
+[Service]
+Type=simple
+User={{ nanobot_user }}
+Group={{ nanobot_user }}
+ExecStart=/home/{{ nanobot_user }}/.local/bin/nanobot
+WorkingDirectory=/home/{{ nanobot_user }}/.nanobot/workspace
+{% if proxy_enabled %}
+Environment="HTTP_PROXY=http://127.0.0.1:{{ proxy_port }}"
+Environment="HTTPS_PROXY=http://127.0.0.1:{{ proxy_port }}"
+Environment="http_proxy=http://127.0.0.1:{{ proxy_port }}"
+Environment="https_proxy=http://127.0.0.1:{{ proxy_port }}"
+Environment="NO_PROXY=localhost,127.0.0.1"
+{% endif %}
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=tmpfs
+BindPaths=/home/{{ nanobot_user }}
+ReadOnlyPaths=/home/{{ nanobot_user }}/.local
+ReadWritePaths=/home/{{ nanobot_user }}/.nanobot/workspace
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
