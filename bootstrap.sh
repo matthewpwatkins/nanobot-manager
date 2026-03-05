@@ -12,7 +12,7 @@ if ! command -v uv &>/dev/null; then
 fi
 
 echo "Installing nanomanager..."
-uv pip install --system -e "$SCRIPT_DIR"
+uv tool install --from "$SCRIPT_DIR" nanomanager
 
 echo ""
 echo "Done. Run 'sudo nanomanager install' to set up the sandbox."

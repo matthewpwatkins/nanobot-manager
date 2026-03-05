@@ -38,7 +38,7 @@ cd nanobot-manager
 Or if you already have `uv`:
 
 ```bash
-uv pip install --system -e .
+uv tool install --from . nanomanager
 ```
 
 ## Usage
