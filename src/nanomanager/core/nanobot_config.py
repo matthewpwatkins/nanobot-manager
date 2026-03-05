@@ -29,6 +29,7 @@ CHANNEL_DOMAINS: dict[str, list[str]] = {
 # {
 #   "providers": { "<name>": { "apiKey": "..." } },
 #   "agents": { "defaults": { "model": "...", "provider": "..." } },
+#   "tools": { "restrictToWorkspace": true, "mcpServers": { ... } },
 #   "channels": { "<name>": { "enabled": true, ... } }
 # }
 
@@ -39,6 +40,9 @@ DEFAULT_CONFIG: dict = {
             "model": "",
             "provider": "",
         },
+    },
+    "tools": {
+        "restrictToWorkspace": True,
     },
     "channels": {},
 }
@@ -62,6 +66,9 @@ def build_config(
                 "model": model,
                 "provider": provider,
             },
+        },
+        "tools": {
+            "restrictToWorkspace": True,
         },
         "channels": {},
     }
@@ -112,4 +119,7 @@ def validate_config(config: dict) -> list[str]:
         errors.append("Missing 'agents' section")
     elif "defaults" not in config.get("agents", {}):
         errors.append("Missing 'agents.defaults' section")
+    tools = config.get("tools", {})
+    if not tools.get("restrictToWorkspace", False):
+        errors.append("tools.restrictToWorkspace must be true (nanomanager enforces this)")
     return errors
