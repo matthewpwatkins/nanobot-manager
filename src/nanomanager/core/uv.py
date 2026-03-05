@@ -14,6 +14,19 @@ def check_uv_installed() -> bool:
     return shutil.which("uv") is not None
 
 
+def install_uv() -> None:
+    console.print("[cyan]Installing uv...[/cyan]")
+    subprocess.run(
+        ["sh", "-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"],
+        check=True,
+    )
+    # Add to PATH for the current process
+    uv_bin = Path.home() / ".local" / "bin"
+    if str(uv_bin) not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = f"{uv_bin}:{os.environ.get('PATH', '')}"
+    console.print("[green]uv installed.[/green]")
+
+
 def get_nanobot_bin_path(nanobot_user: str = "nanobot") -> Path:
     return Path(f"/home/{nanobot_user}/.local/bin/nanobot")
 

@@ -42,7 +42,7 @@ from nanomanager.core.user import (
     remove_nanobot_user,
     user_exists,
 )
-from nanomanager.core.uv import check_uv_installed, install_nanobot, lock_install_dirs
+from nanomanager.core.uv import check_uv_installed, install_nanobot, install_uv, lock_install_dirs
 from nanomanager.state import (
     InstallOptions,
     ManagerState,
@@ -72,16 +72,35 @@ def install(
 
     console.print(Panel.fit("[bold cyan]Nanobot Manager - Install[/bold cyan]"))
 
-    # Preflight checks
-    err = False
+    # Preflight checks — offer to install missing dependencies
     if not check_uv_installed():
-        err_console.print("[red]Error:[/red] 'uv' is not installed. Install from https://docs.astral.sh/uv/")
-        err = True
+        console.print("[yellow]'uv' is not installed.[/yellow]")
+        if yes or typer.confirm("Install uv now?", default=True):
+            install_uv()
+        else:
+            err_console.print("[red]Error:[/red] uv is required. Install from https://docs.astral.sh/uv/")
+            raise typer.Exit(1)
     if not check_acl_available():
-        err_console.print("[red]Error:[/red] 'setfacl' is not available. Install 'acl' package.")
-        err = True
-    if err:
-        raise typer.Exit(1)
+        console.print("[yellow]'setfacl' is not available.[/yellow]")
+        from nanomanager.core.proxy import detect_package_manager
+        try:
+            pm = detect_package_manager()
+            if yes or typer.confirm(f"Install 'acl' package via {pm}?", default=True):
+                import subprocess
+                if pm == "apt-get":
+                    subprocess.run(["apt-get", "install", "-y", "acl"], check=True)
+                elif pm == "dnf":
+                    subprocess.run(["dnf", "install", "-y", "acl"], check=True)
+                elif pm == "pacman":
+                    subprocess.run(["pacman", "-S", "--noconfirm", "acl"], check=True)
+                elif pm == "zypper":
+                    subprocess.run(["zypper", "install", "-y", "acl"], check=True)
+            else:
+                err_console.print("[red]Error:[/red] setfacl is required. Install the 'acl' package.")
+                raise typer.Exit(1)
+        except RuntimeError:
+            err_console.print("[red]Error:[/red] setfacl is required. Install the 'acl' package for your distro.")
+            raise typer.Exit(1)
 
     managing_user = get_current_user()
     console.print(f"Managing user: [bold]{managing_user}[/bold]")

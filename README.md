@@ -18,10 +18,14 @@ A CLI tool that installs [Nanobot](https://github.com/HKUDS/nanobot) into a hard
 
 - Linux (systemd-based distro)
 - Python 3.11+
-- [`uv`](https://docs.astral.sh/uv/) installed
-- `acl` package (`setfacl`/`getfacl`)
-- `squid` (installed automatically if missing)
+- `curl` (for auto-installing uv if missing)
 - `iptables`
+
+The following are auto-installed by `nanomanager install` if missing:
+
+- [`uv`](https://docs.astral.sh/uv/) — Python package/tool manager
+- `acl` package (`setfacl`/`getfacl`) — POSIX ACL utilities
+- `squid` — HTTP proxy (skipped with `--skip-proxy`)
 
 ## Install
 
