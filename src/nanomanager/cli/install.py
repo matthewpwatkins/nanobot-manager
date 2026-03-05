@@ -42,7 +42,7 @@ from nanomanager.core.user import (
     remove_nanobot_user,
     user_exists,
 )
-from nanomanager.core.uv import check_uv_installed, install_nanobot, install_uv, lock_install_dirs
+from nanomanager.core.uv import find_uv, install_nanobot, lock_install_dirs
 from nanomanager.state import (
     InstallOptions,
     ManagerState,
@@ -72,14 +72,10 @@ def install(
 
     console.print(Panel.fit("[bold cyan]Nanobot Manager - Install[/bold cyan]"))
 
-    # Preflight checks — offer to install missing dependencies
-    if not check_uv_installed():
-        console.print("[yellow]'uv' is not installed.[/yellow]")
-        if yes or typer.confirm("Install uv now?", default=True):
-            install_uv()
-        else:
-            err_console.print("[red]Error:[/red] uv is required. Install from https://docs.astral.sh/uv/")
-            raise typer.Exit(1)
+    # Preflight checks
+    if not find_uv():
+        err_console.print("[red]Error:[/red] 'uv' not found. Re-run [cyan]sudo ./bootstrap.sh[/cyan] to install it.")
+        raise typer.Exit(1)
     if not check_acl_available():
         console.print("[yellow]'setfacl' is not available.[/yellow]")
         from nanomanager.core.proxy import detect_package_manager
