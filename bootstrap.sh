@@ -12,7 +12,7 @@ if ! command -v uv &>/dev/null; then
 fi
 
 echo "Installing nanomanager..."
-uv tool install --from "$SCRIPT_DIR" nanomanager
+uv tool install --from "$SCRIPT_DIR" nanobot-manager
 
 echo ""
 echo "Done. Run 'sudo nanomanager install' to set up the sandbox."

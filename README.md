@@ -38,7 +38,7 @@ cd nanobot-manager
 Or if you already have `uv`:
 
 ```bash
-uv tool install --from . nanomanager
+uv tool install --from . nanobot-manager
 ```
 
 ## Usage
