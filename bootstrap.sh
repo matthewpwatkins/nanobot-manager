@@ -26,6 +26,13 @@ if ! sudo -u "$REAL_USER" sh -c 'command -v uv' &>/dev/null; then
 fi
 UV_BIN="$REAL_HOME/.local/bin/uv"
 
+# Fix ownership of uv tools dir if root left __pycache__ files behind
+# (happens when nanomanager runs under sudo and Python writes .pyc files)
+UV_TOOLS_DIR="$REAL_HOME/.local/share/uv/tools/nanobot-manager"
+if [ -d "$UV_TOOLS_DIR" ]; then
+    chown -R "$REAL_USER":"$(id -gn "$REAL_USER")" "$UV_TOOLS_DIR"
+fi
+
 # Install (or reinstall) nanomanager for the real user
 echo "Installing nanomanager..."
 sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" --force nanobot-manager
