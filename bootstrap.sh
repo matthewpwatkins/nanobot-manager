@@ -1,6 +1,7 @@
 #!/bin/bash
 # Bootstrap nanomanager: installs uv if missing, then installs nanomanager.
 # Run with: sudo ./bootstrap.sh
+# Idempotent — safe to run repeatedly regardless of system state.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -18,31 +19,35 @@ if [ -z "$REAL_USER" ]; then
     exit 1
 fi
 REAL_HOME="$(eval echo "~$REAL_USER")"
+REAL_GROUP="$(id -gn "$REAL_USER")"
+UV_BIN="$REAL_HOME/.local/bin/uv"
 
-# Install uv for the real user if not found
-if ! sudo -u "$REAL_USER" sh -c 'command -v uv' &>/dev/null; then
+# --- Step 1: Ensure uv is installed for the real user ---
+if [ ! -f "$UV_BIN" ]; then
     echo "Installing uv for $REAL_USER..."
     sudo -u "$REAL_USER" sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 fi
-UV_BIN="$REAL_HOME/.local/bin/uv"
 
-# Fix ownership of uv tools dir if root left __pycache__ files behind
-# (happens when nanomanager runs under sudo and Python writes .pyc files)
+# --- Step 2: Clean up any stale nanomanager install ---
+# Fix root-owned files (caused by running nanomanager under sudo, which writes .pyc as root)
 UV_TOOLS_DIR="$REAL_HOME/.local/share/uv/tools/nanobot-manager"
 if [ -d "$UV_TOOLS_DIR" ]; then
-    chown -R "$REAL_USER":"$(id -gn "$REAL_USER")" "$UV_TOOLS_DIR"
+    chown -R "$REAL_USER":"$REAL_GROUP" "$UV_TOOLS_DIR"
 fi
 
-# Install (or reinstall) nanomanager for the real user
-echo "Installing nanomanager..."
-sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" --force nanobot-manager
+# Fully uninstall before reinstalling to avoid stale RECORD / partial upgrades
+sudo -u "$REAL_USER" "$UV_BIN" tool uninstall nanobot-manager 2>/dev/null || true
 
-# Symlink into /usr/local/bin so it's available under sudo
+# --- Step 3: Install nanomanager ---
+echo "Installing nanomanager..."
+sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" nanobot-manager
+
+# --- Step 4: Symlink into /usr/local/bin so 'sudo nanomanager' works ---
 NANOMANAGER_BIN="$REAL_HOME/.local/bin/nanomanager"
 ln -sf "$NANOMANAGER_BIN" /usr/local/bin/nanomanager
 echo "Linked /usr/local/bin/nanomanager -> $NANOMANAGER_BIN"
 
-# Ensure ~/.local/bin is in the user's PATH for non-sudo usage
+# --- Step 5: Ensure ~/.local/bin is in the user's PATH ---
 SHELL_NAME="$(basename "$(getent passwd "$REAL_USER" | cut -d: -f7)")"
 case "$SHELL_NAME" in
     zsh)  RC_FILE="$REAL_HOME/.zshrc" ;;
@@ -54,7 +59,7 @@ if [ -n "$RC_FILE" ] && ! grep -qF '.local/bin' "$RC_FILE" 2>/dev/null; then
     echo "" >> "$RC_FILE"
     echo '# Added by nanomanager bootstrap' >> "$RC_FILE"
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$RC_FILE"
-    chown "$REAL_USER":"$(id -gn "$REAL_USER")" "$RC_FILE"
+    chown "$REAL_USER":"$REAL_GROUP" "$RC_FILE"
     echo "Added ~/.local/bin to PATH in $RC_FILE"
 fi
 
