@@ -1,56 +1,54 @@
 #!/bin/bash
-# Bootstrap nanomanager: installs uv if missing, then installs nanomanager via uv.
+# Bootstrap nanomanager: installs uv if missing, then installs nanomanager.
+# Run with: sudo ./bootstrap.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Install uv if not found
-if ! command -v uv &>/dev/null; then
-    echo "Installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
+# Must run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Usage: sudo $0"
+    exit 1
 fi
 
+# Resolve the real user (not root)
+REAL_USER="${SUDO_USER:-}"
+if [ -z "$REAL_USER" ]; then
+    echo "Error: could not determine calling user. Run with sudo, not as root directly."
+    exit 1
+fi
+REAL_HOME="$(eval echo "~$REAL_USER")"
+
+# Install uv for the real user if not found
+if ! sudo -u "$REAL_USER" sh -c 'command -v uv' &>/dev/null; then
+    echo "Installing uv for $REAL_USER..."
+    sudo -u "$REAL_USER" sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+fi
+UV_BIN="$REAL_HOME/.local/bin/uv"
+
+# Install nanomanager for the real user
 echo "Installing nanomanager..."
-uv tool install --from "$SCRIPT_DIR" nanobot-manager
+sudo -u "$REAL_USER" "$UV_BIN" tool install --from "$SCRIPT_DIR" nanobot-manager
 
-# Ensure ~/.local/bin is in PATH
-LOCAL_BIN='export PATH="$HOME/.local/bin:$PATH"'
-if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
-    # Detect shell rc file
-    RC_FILE=""
-    case "$(basename "${SHELL:-bash}")" in
-        zsh)  RC_FILE="$HOME/.zshrc" ;;
-        fish) RC_FILE="$HOME/.config/fish/config.fish" ;;
-        *)    RC_FILE="$HOME/.bashrc" ;;
-    esac
+# Symlink into /usr/local/bin so it's available under sudo
+NANOMANAGER_BIN="$REAL_HOME/.local/bin/nanomanager"
+ln -sf "$NANOMANAGER_BIN" /usr/local/bin/nanomanager
+echo "Linked /usr/local/bin/nanomanager -> $NANOMANAGER_BIN"
 
-    if [ -n "$RC_FILE" ] && ! grep -qF '.local/bin' "$RC_FILE" 2>/dev/null; then
-        read -rp "Add ~/.local/bin to PATH in $RC_FILE? [Y/n] " answer
-        answer="${answer:-Y}"
-        if [[ "$answer" =~ ^[Yy] ]]; then
-            echo "" >> "$RC_FILE"
-            echo '# Added by nanomanager bootstrap' >> "$RC_FILE"
-            echo "$LOCAL_BIN" >> "$RC_FILE"
-            echo "Added to $RC_FILE. Run 'source $RC_FILE' or open a new shell."
-        fi
-    fi
+# Ensure ~/.local/bin is in the user's PATH for non-sudo usage
+SHELL_NAME="$(basename "$(getent passwd "$REAL_USER" | cut -d: -f7)")"
+case "$SHELL_NAME" in
+    zsh)  RC_FILE="$REAL_HOME/.zshrc" ;;
+    fish) RC_FILE="$REAL_HOME/.config/fish/config.fish" ;;
+    *)    RC_FILE="$REAL_HOME/.bashrc" ;;
+esac
 
-    # Also export for the rest of this session
-    export PATH="$HOME/.local/bin:$PATH"
-fi
-
-# Symlink into /usr/local/bin so 'sudo nanomanager' works
-# (sudo resets PATH via secure_path and won't find ~/.local/bin)
-NANOMANAGER_BIN="$HOME/.local/bin/nanomanager"
-if [ -f "$NANOMANAGER_BIN" ] && [ ! -e /usr/local/bin/nanomanager ]; then
-    echo "sudo requires nanomanager in /usr/local/bin."
-    read -rp "Create symlink? (requires sudo) [Y/n] " answer
-    answer="${answer:-Y}"
-    if [[ "$answer" =~ ^[Yy] ]]; then
-        sudo ln -sf "$NANOMANAGER_BIN" /usr/local/bin/nanomanager
-        echo "Symlinked /usr/local/bin/nanomanager -> $NANOMANAGER_BIN"
-    fi
+if [ -n "$RC_FILE" ] && ! grep -qF '.local/bin' "$RC_FILE" 2>/dev/null; then
+    echo "" >> "$RC_FILE"
+    echo '# Added by nanomanager bootstrap' >> "$RC_FILE"
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$RC_FILE"
+    chown "$REAL_USER":"$(id -gn "$REAL_USER")" "$RC_FILE"
+    echo "Added ~/.local/bin to PATH in $RC_FILE"
 fi
 
 echo ""

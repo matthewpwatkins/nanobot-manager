@@ -32,7 +32,7 @@ The following are auto-installed by `nanomanager install` if missing:
 ```bash
 git clone https://github.com/matthewpwatkins/nanobot-manager.git
 cd nanobot-manager
-./bootstrap.sh    # installs uv (if missing) + nanomanager
+sudo ./bootstrap.sh    # installs uv (if missing) + nanomanager
 ```
 
 Or if you already have `uv`:
