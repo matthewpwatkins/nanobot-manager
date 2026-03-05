@@ -10,10 +10,7 @@ from rich.panel import Panel
 
 from nanomanager.core.firewall import apply_firewall_rules, write_firewall_script
 from nanomanager.core.nanobot_config import (
-    CHANNEL_DOMAINS,
     DEFAULT_CONFIG,
-    PROVIDER_DOMAINS,
-    set_proxy_in_config,
     write_config,
 )
 from nanomanager.core.permissions import check_acl_available, setup_nanobot_dirs
@@ -120,11 +117,9 @@ def install(
     console.print("\n[bold]Step 3:[/bold] Setting up directories...")
     setup_nanobot_dirs("/home/nanobot", managing_user=managing_user)
 
-    # 4. Write default config
+    # 4. Write default config (placeholder — onboard fills in provider/channel)
     console.print("\n[bold]Step 4:[/bold] Writing default config...")
     config = dict(DEFAULT_CONFIG)
-    if not skip_proxy:
-        config = set_proxy_in_config(config, PROXY_PORT)
     write_config(config, owner_user=managing_user)
 
     squid_was_preinstalled = False

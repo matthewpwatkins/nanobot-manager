@@ -3,17 +3,14 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Prompt
 
 from nanomanager.core.nanobot_config import (
     CHANNEL_DOMAINS,
-    CONFIG_PATH,
-    DEFAULT_CONFIG,
     PROVIDER_DOMAINS,
-    set_proxy_in_config,
+    build_config,
     write_config,
 )
-from nanomanager.core.proxy import add_domain
 from nanomanager.state import NetworkDomain, load_state, save_state
 from nanomanager.sudo import require_root
 
@@ -70,24 +67,30 @@ def onboard() -> None:
 
     channel_config: dict = {}
     if channel == "slack":
-        channel_config["slackBotToken"] = Prompt.ask("Slack bot token", password=True)
-        channel_config["slackAppToken"] = Prompt.ask("Slack app token", password=True)
+        channel_config["botToken"] = Prompt.ask("Slack bot token", password=True)
+        channel_config["appToken"] = Prompt.ask("Slack app token", password=True)
+        allow_from = Prompt.ask("Allowed Slack user IDs (comma-separated, or blank for all)", default="")
+        if allow_from.strip():
+            channel_config["allowFrom"] = [u.strip() for u in allow_from.split(",")]
     elif channel == "discord":
-        channel_config["discordToken"] = Prompt.ask("Discord bot token", password=True)
+        channel_config["token"] = Prompt.ask("Discord bot token", password=True)
+        allow_from = Prompt.ask("Allowed Discord user IDs (comma-separated, or blank for all)", default="")
+        if allow_from.strip():
+            channel_config["allowFrom"] = [u.strip() for u in allow_from.split(",")]
     elif channel == "telegram":
-        channel_config["telegramToken"] = Prompt.ask("Telegram bot token", password=True)
+        channel_config["token"] = Prompt.ask("Telegram bot token", password=True)
+        allow_from = Prompt.ask("Allowed Telegram user IDs (comma-separated)", default="")
+        if allow_from.strip():
+            channel_config["allowFrom"] = [u.strip() for u in allow_from.split(",")]
 
-    # Build config
-    config = dict(DEFAULT_CONFIG)
-    config["llmProvider"] = provider
-    config["apiKey"] = api_key
-    config["model"] = model
-    if channel != "none":
-        config["channel"] = channel
-        config.update(channel_config)
-
-    if state.install_options.proxy_enabled:
-        config = set_proxy_in_config(config, state.install_options.proxy_port)
+    # Build config using the real nanobot config structure
+    config = build_config(
+        provider=provider,
+        api_key=api_key,
+        model=model,
+        channel=channel if channel != "none" else None,
+        channel_config=channel_config if channel != "none" else None,
+    )
 
     write_config(config, owner_user=state.managing_user)
 

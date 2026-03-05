@@ -25,15 +25,48 @@ CHANNEL_DOMAINS: dict[str, list[str]] = {
     "telegram": ["api.telegram.org"],
 }
 
+# Nanobot config.json follows this structure:
+# {
+#   "providers": { "<name>": { "apiKey": "..." } },
+#   "agents": { "defaults": { "model": "...", "provider": "..." } },
+#   "channels": { "<name>": { "enabled": true, ... } }
+# }
+
 DEFAULT_CONFIG: dict = {
-    "restrictToWorkspace": True,
-    "mcpServers": {},
+    "providers": {},
+    "agents": {
+        "defaults": {
+            "model": "",
+            "provider": "",
+        },
+    },
+    "channels": {},
 }
 
 
-def set_proxy_in_config(config: dict, proxy_port: int = 3128) -> dict:
-    config["httpProxy"] = f"http://127.0.0.1:{proxy_port}"
-    config["httpsProxy"] = f"http://127.0.0.1:{proxy_port}"
+def build_config(
+    provider: str,
+    api_key: str,
+    model: str,
+    channel: str | None = None,
+    channel_config: dict | None = None,
+) -> dict:
+    config: dict = {
+        "providers": {
+            provider: {
+                "apiKey": api_key,
+            },
+        },
+        "agents": {
+            "defaults": {
+                "model": model,
+                "provider": provider,
+            },
+        },
+        "channels": {},
+    }
+    if channel and channel_config:
+        config["channels"][channel] = {"enabled": True, **channel_config}
     return config
 
 
@@ -73,6 +106,10 @@ def validate_config(config: dict) -> list[str]:
     if not isinstance(config, dict):
         errors.append("Config must be a JSON object")
         return errors
-    if not config.get("restrictToWorkspace", False):
-        errors.append("restrictToWorkspace must be true")
+    if "providers" not in config:
+        errors.append("Missing 'providers' section")
+    if "agents" not in config:
+        errors.append("Missing 'agents' section")
+    elif "defaults" not in config.get("agents", {}):
+        errors.append("Missing 'agents.defaults' section")
     return errors

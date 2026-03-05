@@ -18,7 +18,7 @@ from nanomanager.sudo import require_root
 app = typer.Typer(help="Nanobot configuration management")
 console = Console()
 
-SECRET_KEYS = {"apiKey", "slackBotToken", "slackAppToken", "discordToken", "telegramToken"}
+SECRET_KEYS = {"apiKey", "token", "botToken", "appToken", "accessToken", "appSecret"}
 
 
 def _redact(config: dict) -> dict:
