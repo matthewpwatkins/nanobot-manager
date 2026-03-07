@@ -86,8 +86,10 @@ def setup_nanobot_dirs(nanobot_home: str = "/home/nanobot", managing_user: str |
     else:
         managing_uid = nanobot_uid
 
-    # ~/.nanobot/ owned by managing_user:nanobot, 750
-    os.chown(nanobot_dir, managing_uid, nanobot_gid)
+    # ~/.nanobot/ owned by nanobot:nanobot, 750
+    # (nanobot needs to create runtime subdirs like cron/; config.json
+    # is individually owned by managing_user with mode 640)
+    os.chown(nanobot_dir, nanobot_uid, nanobot_gid)
     os.chmod(nanobot_dir, 0o750)
 
     # ~/.nanobot/workspace/ owned by nanobot:nanobot, 750
