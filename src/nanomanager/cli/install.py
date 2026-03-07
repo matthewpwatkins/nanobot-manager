@@ -117,14 +117,10 @@ def install(
     console.print("\n[bold]Step 3:[/bold] Setting up directories...")
     setup_nanobot_dirs("/home/nanobot", managing_user=managing_user)
 
-    # 4. Write default config (only if no config exists — onboard fills in provider/channel)
-    console.print("\n[bold]Step 4:[/bold] Checking config...")
-    from nanomanager.core.nanobot_config import CONFIG_PATH
-    if CONFIG_PATH.exists():
-        console.print(f"[yellow]Config already exists at {CONFIG_PATH}, preserving.[/yellow]")
-    else:
-        config = dict(DEFAULT_CONFIG)
-        write_config(config, owner_user=managing_user)
+    # 4. Write default config (placeholder — onboard fills in provider/channel)
+    console.print("\n[bold]Step 4:[/bold] Writing default config...")
+    config = dict(DEFAULT_CONFIG)
+    write_config(config, owner_user=managing_user)
 
     squid_was_preinstalled = False
 
