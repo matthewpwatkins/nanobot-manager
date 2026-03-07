@@ -8,7 +8,7 @@ After=network.target{% if proxy_enabled %} squid.service{% endif %}{% if firewal
 Type=simple
 User={{ nanobot_user }}
 Group={{ nanobot_user }}
-ExecStart=/home/{{ nanobot_user }}/.local/bin/nanobot
+ExecStart=/home/{{ nanobot_user }}/.local/bin/nanobot gateway
 WorkingDirectory=/home/{{ nanobot_user }}/.nanobot/workspace
 {% if proxy_enabled %}
 Environment="HTTP_PROXY=http://127.0.0.1:{{ proxy_port }}"

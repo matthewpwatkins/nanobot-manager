@@ -174,7 +174,7 @@ def install(
     console.print("\nNext steps:")
     console.print("  1. [cyan]sudo nanomanager onboard[/cyan]   — configure API key and channels")
     console.print("  2. [cyan]sudo nanomanager start[/cyan]      — start the service")
-    console.print("  3. [cyan]nanomanager status[/cyan]          — check service health")
+    console.print("  3. [cyan]sudo nanomanager status[/cyan]     — check service health")
 
 
 def uninstall(

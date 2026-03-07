@@ -49,7 +49,7 @@ uv tool install --from . nanobot-manager
 sudo nanomanager install
 sudo nanomanager onboard       # configure API key, model, chat channel
 sudo nanomanager start
-nanomanager status
+sudo nanomanager status
 ```
 
 ### Skip optional layers
@@ -64,8 +64,8 @@ sudo nanomanager install --skip-proxy --skip-firewall
 sudo nanomanager start
 sudo nanomanager stop
 sudo nanomanager restart
-nanomanager status [--json]
-nanomanager logs [-f] [-n 100]
+sudo nanomanager status [--json]
+sudo nanomanager logs [-f] [-n 100]
 ```
 
 ### Filesystem access
@@ -74,7 +74,7 @@ nanomanager logs [-f] [-n 100]
 sudo nanomanager access grant /data/reports          # read-only
 sudo nanomanager access grant /data/output --write   # read-write
 sudo nanomanager access revoke /data/reports
-nanomanager access list
+sudo nanomanager access list
 ```
 
 ### Network allowlist
@@ -82,14 +82,14 @@ nanomanager access list
 ```bash
 sudo nanomanager network allow api.example.com
 sudo nanomanager network block api.example.com
-nanomanager network list
+sudo nanomanager network list
 ```
 
 ### Config
 
 ```bash
-nanomanager config show
-nanomanager config show --reveal-secrets
+sudo nanomanager config show
+sudo nanomanager config show --reveal-secrets
 sudo nanomanager config edit
 ```
 
@@ -99,7 +99,7 @@ sudo nanomanager config edit
 sudo nanomanager mcp add my-tool --type stdio --command "/usr/local/bin/my-mcp-server"
 sudo nanomanager mcp add remote --type sse --url "http://localhost:8080/sse"
 sudo nanomanager mcp remove my-tool
-nanomanager mcp list
+sudo nanomanager mcp list
 ```
 
 ### Update nanobot
