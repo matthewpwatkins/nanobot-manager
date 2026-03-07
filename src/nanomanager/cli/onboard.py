@@ -20,12 +20,12 @@ PROVIDERS = list(PROVIDER_DOMAINS.keys())
 CHANNELS = list(CHANNEL_DOMAINS.keys()) + ["none"]
 
 DEFAULT_MODELS = {
-    "anthropic": "claude-sonnet-4-5",
-    "openai": "gpt-4o",
-    "openrouter": "anthropic/claude-sonnet-4-5",
-    "deepseek": "deepseek-chat",
-    "groq": "llama-3.3-70b-versatile",
-    "gemini": "gemini-2.0-flash",
+    "anthropic": "anthropic/claude-sonnet-4-5",
+    "openai": "openai/gpt-4o",
+    "openrouter": "openrouter/anthropic/claude-sonnet-4-5",
+    "deepseek": "deepseek/deepseek-chat",
+    "groq": "groq/llama-3.3-70b-versatile",
+    "gemini": "gemini/gemini-2.0-flash",
 }
 
 
