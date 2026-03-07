@@ -190,8 +190,8 @@ def install(
 
     # Update squid allowlist with builtins
     if not skip_proxy:
-        from nanomanager.core.proxy import write_domain_allowlist, restart_squid
         write_domain_allowlist([d.domain for d in state.network_domains])
+        from nanomanager.core.proxy import restart_squid
         try:
             restart_squid()
         except Exception:
