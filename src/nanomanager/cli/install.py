@@ -117,10 +117,14 @@ def install(
     console.print("\n[bold]Step 3:[/bold] Setting up directories...")
     setup_nanobot_dirs("/home/nanobot", managing_user=managing_user)
 
-    # 4. Write default config (placeholder — onboard fills in provider/channel)
-    console.print("\n[bold]Step 4:[/bold] Writing default config...")
-    config = dict(DEFAULT_CONFIG)
-    write_config(config, owner_user=managing_user)
+    # 4. Write default config (only if no config exists — onboard fills in provider/channel)
+    console.print("\n[bold]Step 4:[/bold] Checking config...")
+    from nanomanager.core.nanobot_config import CONFIG_PATH
+    if CONFIG_PATH.exists():
+        console.print(f"[yellow]Config already exists at {CONFIG_PATH}, preserving.[/yellow]")
+    else:
+        config = dict(DEFAULT_CONFIG)
+        write_config(config, owner_user=managing_user)
 
     squid_was_preinstalled = False
 
@@ -131,7 +135,9 @@ def install(
         if not squid_was_preinstalled:
             install_squid()
         write_squid_config(PROXY_PORT)
-        write_domain_allowlist([])  # Empty; onboard adds domains
+        existing = load_state()
+        existing_domains = [d.domain for d in existing.network_domains] if existing else []
+        write_domain_allowlist(existing_domains)
         import subprocess
         try:
             subprocess.run(["systemctl", "enable", "--now", "squid"], check=True)
@@ -158,7 +164,8 @@ def install(
         enable_service("nanomanager-firewall")
     enable_service("nanobot")
 
-    # 8. Save state
+    # 8. Save state (preserve existing domains/grants if re-installing)
+    existing_state = load_state()
     state = ManagerState(
         managing_user=managing_user,
         install_options=InstallOptions(
@@ -167,6 +174,8 @@ def install(
             squid_was_preinstalled=squid_was_preinstalled,
             proxy_port=PROXY_PORT,
         ),
+        acl_grants=existing_state.acl_grants if existing_state else [],
+        network_domains=existing_state.network_domains if existing_state else [],
     )
     save_state(state)
 
