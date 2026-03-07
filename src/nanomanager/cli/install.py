@@ -53,9 +53,10 @@ from nanomanager.sudo import require_root
 console = Console()
 err_console = Console(stderr=True)
 
-# Default builtin domains always allowed
+# Default builtin domains always allowed (for litellm model cost map, npm registry, etc.)
 BUILTIN_DOMAINS = [
-    # Common CDN/infra used by many providers
+    "raw.githubusercontent.com",
+    "registry.npmjs.org",
 ]
 
 
@@ -113,20 +114,25 @@ def install(
     install_nanobot("nanobot")
     lock_install_dirs("nanobot")
 
-    # 3. Set up directories
-    console.print("\n[bold]Step 3:[/bold] Setting up directories...")
+    # 3. Install Node.js (for npx-based MCP servers)
+    console.print("\n[bold]Step 3:[/bold] Installing Node.js...")
+    from nanomanager.core.node import install_nvm_and_node, get_node_bin_dir
+    node_bin_dir = install_nvm_and_node("nanobot")
+
+    # 4. Set up directories
+    console.print("\n[bold]Step 4:[/bold] Setting up directories...")
     setup_nanobot_dirs("/home/nanobot", managing_user=managing_user)
 
-    # 4. Write default config (placeholder — onboard fills in provider/channel)
-    console.print("\n[bold]Step 4:[/bold] Writing default config...")
+    # 5. Write default config (placeholder — onboard fills in provider/channel)
+    console.print("\n[bold]Step 5:[/bold] Writing default config...")
     config = dict(DEFAULT_CONFIG)
     write_config(config, owner_user=managing_user)
 
     squid_was_preinstalled = False
 
-    # 5. Set up squid proxy
+    # 6. Set up squid proxy
     if not skip_proxy:
-        console.print("\n[bold]Step 5:[/bold] Configuring squid proxy...")
+        console.print("\n[bold]Step 6:[/bold] Configuring squid proxy...")
         squid_was_preinstalled = check_squid_installed()
         if not squid_was_preinstalled:
             install_squid()
@@ -140,28 +146,35 @@ def install(
         except Exception:
             pass
 
-    # 6. Set up firewall
+    # 7. Set up firewall
     if not skip_firewall:
-        console.print("\n[bold]Step 6:[/bold] Applying firewall rules...")
+        console.print("\n[bold]Step 7:[/bold] Applying firewall rules...")
         write_firewall_script("nanobot", PROXY_PORT)
         apply_firewall_rules("nanobot")
         write_firewall_service()
 
-    # 7. Write systemd units
-    console.print("\n[bold]Step 7:[/bold] Installing systemd services...")
+    # 8. Write systemd units
+    console.print("\n[bold]Step 8:[/bold] Installing systemd services...")
+    node_dir = get_node_bin_dir()
     write_nanobot_service(
         nanobot_user="nanobot",
         proxy_port=PROXY_PORT,
         proxy_enabled=not skip_proxy,
         firewall_enabled=not skip_firewall,
+        node_bin_dir=str(node_dir) if node_dir else None,
     )
     daemon_reload()
     if not skip_firewall:
         enable_service("nanomanager-firewall")
     enable_service("nanobot")
 
-    # 8. Save state (preserve existing domains/grants if re-installing)
+    # 9. Save state (preserve existing domains/grants; add builtins)
     existing_state = load_state()
+    existing_domains = list(existing_state.network_domains) if existing_state else []
+    existing_domain_set = {d.domain for d in existing_domains}
+    for domain in BUILTIN_DOMAINS:
+        if domain not in existing_domain_set:
+            existing_domains.append(NetworkDomain(domain=domain, builtin=True))
     state = ManagerState(
         managing_user=managing_user,
         install_options=InstallOptions(
@@ -171,9 +184,18 @@ def install(
             proxy_port=PROXY_PORT,
         ),
         acl_grants=existing_state.acl_grants if existing_state else [],
-        network_domains=existing_state.network_domains if existing_state else [],
+        network_domains=existing_domains,
     )
     save_state(state)
+
+    # Update squid allowlist with builtins
+    if not skip_proxy:
+        from nanomanager.core.proxy import write_domain_allowlist, restart_squid
+        write_domain_allowlist([d.domain for d in state.network_domains])
+        try:
+            restart_squid()
+        except Exception:
+            pass
 
     console.print("\n[bold green]Installation complete![/bold green]")
     console.print("\nNext steps:")

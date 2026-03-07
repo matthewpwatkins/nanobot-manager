@@ -68,11 +68,13 @@ def setup_nanobot_dirs(nanobot_home: str = "/home/nanobot", managing_user: str |
     nanobot_dir = home / ".nanobot"
     workspace_dir = nanobot_dir / "workspace"
     local_dir = home / ".local"
+    cache_dir = home / ".cache"
 
     # Create dirs
     nanobot_dir.mkdir(parents=True, exist_ok=True)
     workspace_dir.mkdir(parents=True, exist_ok=True)
     local_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
 
     import pwd
     nanobot_uid = pwd.getpwnam("nanobot").pw_uid
@@ -99,5 +101,9 @@ def setup_nanobot_dirs(nanobot_home: str = "/home/nanobot", managing_user: str |
     # ~/.local/ owned by root:nanobot, 750
     os.chown(local_dir, 0, nanobot_gid)
     os.chmod(local_dir, 0o750)
+
+    # ~/.cache/ owned by nanobot:nanobot, 750 (npx package cache)
+    os.chown(cache_dir, nanobot_uid, nanobot_gid)
+    os.chmod(cache_dir, 0o750)
 
     console.print(f"[green]Set up nanobot directories in {nanobot_home}[/green]")

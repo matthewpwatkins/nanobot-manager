@@ -10,6 +10,9 @@ User={{ nanobot_user }}
 Group={{ nanobot_user }}
 ExecStart=/home/{{ nanobot_user }}/.local/bin/nanobot gateway
 WorkingDirectory=/home/{{ nanobot_user }}/.nanobot/workspace
+{% if node_bin_dir %}
+Environment="PATH={{ node_bin_dir }}:/home/{{ nanobot_user }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+{% endif %}
 {% if proxy_enabled %}
 Environment="HTTP_PROXY=http://127.0.0.1:{{ proxy_port }}"
 Environment="HTTPS_PROXY=http://127.0.0.1:{{ proxy_port }}"
@@ -28,6 +31,10 @@ ProtectSystem=strict
 ProtectHome=tmpfs
 BindPaths=/home/{{ nanobot_user }}
 ReadOnlyPaths=/home/{{ nanobot_user }}/.local
+{% if node_bin_dir %}
+ReadOnlyPaths=/home/{{ nanobot_user }}/.nvm
+ReadWritePaths=/home/{{ nanobot_user }}/.cache
+{% endif %}
 ReadWritePaths=/home/{{ nanobot_user }}/.nanobot/workspace
 PrivateTmp=yes
 ProtectKernelTunables=yes
