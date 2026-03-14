@@ -97,14 +97,24 @@ def remove_nanobot_user(username: str = "nanobot", keep_home: bool = False) -> N
 
 def _configure_display_manager(username: str) -> None:
     """Configure the display manager to show the nanobot user on the login screen."""
-    lightdm_dir = Path("/etc/lightdm/lightdm.conf.d")
-    if lightdm_dir.parent.exists():
-        lightdm_dir.mkdir(parents=True, exist_ok=True)
-        conf = lightdm_dir / "50-show-nanobot.conf"
-        conf.write_text("[Seat:*]\ngreeter-hide-users=false\n")
-        console.print(f"[green]Configured LightDM to show '{username}' on login screen.[/green]")
+    # AccountsService overrides LightDM's users.conf when installed.
+    # System users are hidden by default — mark nanobot as non-system.
+    accounts_dir = Path("/var/lib/AccountsService/users")
+    if accounts_dir.exists():
+        user_conf = accounts_dir / username
+        user_conf.write_text("[User]\nSystemAccount=false\n")
+        console.print(f"[green]Configured AccountsService to show '{username}' on login screen.[/green]")
+        subprocess.run(["systemctl", "restart", "accounts-daemon"], capture_output=True)
     else:
-        console.print("[yellow]LightDM not found — you may need to configure your display manager manually.[/yellow]")
+        # Fallback: configure LightDM directly
+        lightdm_dir = Path("/etc/lightdm/lightdm.conf.d")
+        if lightdm_dir.parent.exists():
+            lightdm_dir.mkdir(parents=True, exist_ok=True)
+            conf = lightdm_dir / "50-show-nanobot.conf"
+            conf.write_text("[Seat:*]\ngreeter-hide-users=false\n")
+            console.print(f"[green]Configured LightDM to show '{username}' on login screen.[/green]")
+        else:
+            console.print("[yellow]Could not configure display manager — you may need to do this manually.[/yellow]")
 
 
 def add_user_to_group(username: str, group: str) -> None:
