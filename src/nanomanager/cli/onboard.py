@@ -39,7 +39,12 @@ def onboard() -> None:
         raise typer.Exit(1)
 
     console.print(Panel.fit("[bold cyan]Nanobot Manager - Onboard[/bold cyan]"))
-    console.print("This wizard configures your API keys and chat channel.\n")
+    console.print("This wizard configures your API keys and chat channel.")
+    console.print("[bold yellow]Warning:[/bold yellow] This will overwrite config.json with new settings.")
+    console.print("If you have existing config you want to keep, back it up first.")
+    console.print(f"  Config path: [cyan]/home/nanobot/.nanobot/config.json[/cyan]")
+    console.print("Note: workspace files (USER.md, SOUL.md, TOOLS.md, etc.) will not be touched.\n")
+    typer.confirm("Okay to proceed?", abort=True)
 
     # LLM Provider
     console.print("[bold]Available LLM providers:[/bold]")
