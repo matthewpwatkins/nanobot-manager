@@ -33,16 +33,17 @@ def _group_exists(name: str) -> bool:
         return False
 
 
-def create_nanobot_user(username: str = "nanobot") -> bool:
+def create_nanobot_user(username: str = "nanobot", enable_display: bool = False) -> bool:
     if user_exists(username):
         console.print(f"[yellow]User '{username}' already exists, skipping.[/yellow]")
         return False
+    shell = "/bin/bash" if enable_display else "/usr/sbin/nologin"
     cmd = [
         "useradd",
         "--system",
         "--create-home",
         "--home-dir", f"/home/{username}",
-        "--shell", "/usr/sbin/nologin",
+        "--shell", shell,
     ]
     if _group_exists(username):
         cmd += ["-g", username]
@@ -52,6 +53,27 @@ def create_nanobot_user(username: str = "nanobot") -> bool:
     subprocess.run(cmd, check=True)
     console.print(f"[green]Created system user '{username}'.[/green]")
     return True
+
+
+def enable_display_login(username: str = "nanobot") -> None:
+    """Enable display login for an existing nanobot user: set shell, password, and groups."""
+    import pwd
+    pw = pwd.getpwnam(username)
+
+    # Set login shell if currently nologin
+    if pw.pw_shell in ("/usr/sbin/nologin", "/bin/false"):
+        subprocess.run(["usermod", "--shell", "/bin/bash", username], check=True)
+        console.print(f"[green]Set login shell to /bin/bash for '{username}'.[/green]")
+
+    # Add to display-related groups
+    for group in ("video", "audio", "input", "render"):
+        if _group_exists(group):
+            subprocess.run(["usermod", "-aG", group, username], check=True)
+    console.print(f"[green]Added '{username}' to display groups.[/green]")
+
+    # Set password
+    console.print(f"[bold]Set a password for '{username}':[/bold]")
+    subprocess.run(["passwd", username], check=True)
 
 
 def remove_nanobot_user(username: str = "nanobot", keep_home: bool = False) -> None:

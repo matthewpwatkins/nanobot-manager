@@ -36,7 +36,7 @@ ReadOnlyPaths=/home/{{ nanobot_user }}/.nvm
 ReadWritePaths=/home/{{ nanobot_user }}/.cache
 {% endif %}
 ReadWritePaths=/home/{{ nanobot_user }}/.nanobot/workspace
-PrivateTmp=yes
+PrivateTmp={{ 'no' if enable_display else 'yes' }}
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes

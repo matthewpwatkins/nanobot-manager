@@ -35,6 +35,7 @@ from nanomanager.core.service import (
 from nanomanager.core.user import (
     add_user_to_group,
     create_nanobot_user,
+    enable_display_login,
     get_current_user,
     remove_nanobot_user,
     user_exists,
@@ -63,6 +64,7 @@ BUILTIN_DOMAINS = [
 def install(
     skip_proxy: bool = typer.Option(False, "--skip-proxy", help="Skip squid proxy setup"),
     skip_firewall: bool = typer.Option(False, "--skip-firewall", help="Skip iptables firewall setup"),
+    enable_display: bool = typer.Option(False, "--enable-display", help="Allow nanobot to log in and use a display (for GUI apps like Obsidian)"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ) -> None:
     """Install and configure nanobot in a hardened sandbox."""
@@ -100,14 +102,17 @@ def install(
     console.print(f"Managing user: [bold]{managing_user}[/bold]")
     console.print(f"Proxy: {'[green]enabled[/green]' if not skip_proxy else '[yellow]skipped[/yellow]'}")
     console.print(f"Firewall: {'[green]enabled[/green]' if not skip_firewall else '[yellow]skipped[/yellow]'}")
+    console.print(f"Display login: {'[green]enabled[/green]' if enable_display else '[yellow]disabled[/yellow]'}")
 
     if not yes:
         typer.confirm("\nProceed with installation?", abort=True)
 
     # 1. Create nanobot system user
     console.print("\n[bold]Step 1:[/bold] Creating system user...")
-    create_nanobot_user("nanobot")
+    create_nanobot_user("nanobot", enable_display=enable_display)
     add_user_to_group(managing_user, "nanobot")
+    if enable_display:
+        enable_display_login("nanobot")
 
     # 2. Install nanobot via uv
     console.print("\n[bold]Step 2:[/bold] Installing nanobot-ai...")
@@ -162,6 +167,7 @@ def install(
         proxy_enabled=not skip_proxy,
         firewall_enabled=not skip_firewall,
         node_bin_dir=str(node_dir) if node_dir else None,
+        enable_display=enable_display,
     )
     daemon_reload()
     if not skip_firewall:

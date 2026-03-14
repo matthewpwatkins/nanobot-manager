@@ -17,6 +17,7 @@ def write_nanobot_service(
     proxy_enabled: bool = True,
     firewall_enabled: bool = True,
     node_bin_dir: str | None = None,
+    enable_display: bool = False,
 ) -> None:
     env = Environment(loader=PackageLoader("nanomanager", "templates"))
     template = env.get_template("nanobot.service.j2")
@@ -26,6 +27,7 @@ def write_nanobot_service(
         proxy_enabled=proxy_enabled,
         firewall_enabled=firewall_enabled,
         node_bin_dir=node_bin_dir,
+        enable_display=enable_display,
     )
     unit_path = SYSTEMD_DIR / "nanobot.service"
     unit_path.parent.mkdir(parents=True, exist_ok=True)
