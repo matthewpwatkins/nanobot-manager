@@ -94,9 +94,16 @@ def setup_nanobot_dirs(nanobot_home: str = "/home/nanobot", managing_user: str |
     os.chown(nanobot_dir, nanobot_uid, nanobot_gid)
     os.chmod(nanobot_dir, 0o750)
 
-    # ~/.nanobot/workspace/ owned by nanobot:nanobot, 750
+    # ~/.nanobot/workspace/ owned by nanobot:nanobot, 770 + setgid
+    # (group-writable so managing user can edit workspace files;
+    # setgid ensures new files inherit nanobot group;
+    # default ACL ensures new files are group-writable)
     os.chown(workspace_dir, nanobot_uid, nanobot_gid)
-    os.chmod(workspace_dir, 0o750)
+    os.chmod(workspace_dir, 0o2770)
+    subprocess.run(
+        ["setfacl", "-d", "-m", "g::rwX", str(workspace_dir)],
+        check=True,
+    )
 
     # ~/.local/ owned by root:nanobot, 750
     os.chown(local_dir, 0, nanobot_gid)
@@ -106,4 +113,15 @@ def setup_nanobot_dirs(nanobot_home: str = "/home/nanobot", managing_user: str |
     os.chown(cache_dir, nanobot_uid, nanobot_gid)
     os.chmod(cache_dir, 0o750)
 
+    # Make existing workspace files group-writable so managing user can edit them.
+    # These are created by nanobot on first start, so they may not exist yet.
+    _make_workspace_group_writable(workspace_dir)
+
     console.print(f"[green]Set up nanobot directories in {nanobot_home}[/green]")
+
+
+def _make_workspace_group_writable(workspace_dir: Path) -> None:
+    """Make workspace files group-writable so the managing user (in nanobot group) can edit them."""
+    for fpath in workspace_dir.iterdir():
+        if fpath.is_file():
+            os.chmod(fpath, 0o660)
