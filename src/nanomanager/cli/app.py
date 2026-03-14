@@ -27,7 +27,7 @@ app.command("update")(update_mod.update)
 
 # Sub-apps
 app.add_typer(access.app, name="access")
-app.add_typer(network.app, name="network")
+app.add_typer(network.app, name="network-lock")
 app.add_typer(config_cmd.app, name="config")
 app.add_typer(mcp.app, name="mcp")
 
