@@ -42,7 +42,7 @@ DEFAULT_CONFIG: dict = {
         },
     },
     "tools": {
-        "restrictToWorkspace": True,
+        "restrictToWorkspace": False,
     },
     "channels": {},
 }
@@ -68,7 +68,7 @@ def build_config(
             },
         },
         "tools": {
-            "restrictToWorkspace": True,
+            "restrictToWorkspace": False,
         },
         "channels": {},
     }
@@ -119,7 +119,4 @@ def validate_config(config: dict) -> list[str]:
         errors.append("Missing 'agents' section")
     elif "defaults" not in config.get("agents", {}):
         errors.append("Missing 'agents.defaults' section")
-    tools = config.get("tools", {})
-    if not tools.get("restrictToWorkspace", False):
-        errors.append("tools.restrictToWorkspace must be true (nanomanager enforces this)")
     return errors
