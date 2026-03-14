@@ -4,6 +4,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+import subprocess
+
 from nanomanager.core.proxy import add_domain, remove_domain
 from nanomanager.state import load_state
 from nanomanager.sudo import require_root
@@ -66,3 +68,27 @@ def list_domains() -> None:
         )
 
     console.print(table)
+
+
+@app.command()
+def pause() -> None:
+    """Temporarily disable all network restrictions (firewall + proxy)."""
+    require_root()
+    for svc in ("nanomanager-firewall", "squid"):
+        try:
+            subprocess.run(["systemctl", "stop", svc], check=True)
+        except Exception:
+            pass
+    console.print("[yellow]Network restrictions paused. Run 'sudo nanomanager network resume' to re-enable.[/yellow]")
+
+
+@app.command()
+def resume() -> None:
+    """Re-enable network restrictions (firewall + proxy)."""
+    require_root()
+    for svc in ("squid", "nanomanager-firewall"):
+        try:
+            subprocess.run(["systemctl", "start", svc], check=True)
+        except Exception:
+            pass
+    console.print("[green]Network restrictions resumed.[/green]")
