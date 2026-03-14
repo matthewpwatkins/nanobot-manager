@@ -75,6 +75,10 @@ def enable_display_login(username: str = "nanobot") -> None:
     console.print(f"[bold]Set a password for '{username}':[/bold]")
     subprocess.run(["passwd", username], check=True)
 
+    # Ensure display manager shows the nanobot user
+    # (system users have low UIDs and are hidden by default)
+    _configure_display_manager(username)
+
 
 def remove_nanobot_user(username: str = "nanobot", keep_home: bool = False) -> None:
     if not user_exists(username):
@@ -89,6 +93,18 @@ def remove_nanobot_user(username: str = "nanobot", keep_home: bool = False) -> N
     if _group_exists(username):
         subprocess.run(["groupdel", username], check=True)
         console.print(f"[green]Removed group '{username}'.[/green]")
+
+
+def _configure_display_manager(username: str) -> None:
+    """Configure the display manager to show the nanobot user on the login screen."""
+    lightdm_dir = Path("/etc/lightdm/lightdm.conf.d")
+    if lightdm_dir.parent.exists():
+        lightdm_dir.mkdir(parents=True, exist_ok=True)
+        conf = lightdm_dir / "50-show-nanobot.conf"
+        conf.write_text("[Seat:*]\ngreeter-hide-users=false\n")
+        console.print(f"[green]Configured LightDM to show '{username}' on login screen.[/green]")
+    else:
+        console.print("[yellow]LightDM not found — you may need to configure your display manager manually.[/yellow]")
 
 
 def add_user_to_group(username: str, group: str) -> None:
